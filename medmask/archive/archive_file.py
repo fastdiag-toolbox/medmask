@@ -219,18 +219,6 @@ class MaskArchive:
         else:
             hdr = self.header.copy()
 
-        # place new blob at end
-        offset = hdr["data_offset"] + hdr["data_length"]
-        length = len(data_blob)
-        idx_list.append(
-            {
-                "name": name,
-                "offset": offset,
-                "length": length,
-                "mapping": mask.mapping._name_to_label,
-            }
-        )
-
         # write to disk
         with open(self.path, "r+b" if os.path.exists(self.path) else "wb") as fp:
             # write space JSON if first mask
@@ -238,10 +226,32 @@ class MaskArchive:
                 fp.seek(hdr["space_offset"])
                 fp.write(self.space.to_json().encode("utf-8"))
 
-            # ensure index capacity
+            # ensure index capacity first (with existing entries only)
             json_bytes = json.dumps(idx_list).encode("utf-8")
-            hdr = self._ensure_index_capacity(fp, hdr, len(json_bytes))
+            old_data_offset = hdr["data_offset"]
+            hdr = self._ensure_index_capacity(fp, hdr, len(json_bytes) + 200)  # extra space for new entry
+            
+            # if data was relocated, update all existing entry offsets
+            if hdr["data_offset"] != old_data_offset:
+                offset_delta = hdr["data_offset"] - old_data_offset
+                for entry in idx_list:
+                    entry["offset"] += offset_delta
+            
+            # place new blob at end (after potential data relocation)
+            offset = hdr["data_offset"] + hdr["data_length"]
+            length = len(data_blob)
+            idx_list.append(
+                {
+                    "name": name,
+                    "offset": offset,
+                    "length": length,
+                    "mapping": mask.mapping._name_to_label,
+                }
+            )
 
+            # re-serialize with the new entry
+            json_bytes = json.dumps(idx_list).encode("utf-8")
+            
             # write index (zero-padded)
             fp.seek(hdr["index_offset"])
             fp.write(json_bytes)

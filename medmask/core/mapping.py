@@ -177,3 +177,13 @@ class LabelMapping:
             int: Number of name-label pairs in the mapping.
         """
         return len(self._name_to_label) 
+    
+
+    def __repr__(self) -> str:
+        """
+        Return string representation of the mapping.
+
+        Returns:
+            str: String representation of the name_to_label dictionary.
+        """
+        return str(self._name_to_label)

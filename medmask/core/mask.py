@@ -151,25 +151,23 @@ class SegmentationMask:
     # ------------------------------------------------------------------
     # Internal helpers --------------------------------------------------
     # ------------------------------------------------------------------
-    def _sync_labels_with_array(self) -> None:
-        """Ensure every label already painted exists in the mapping."""
-        labels_in_array = np.unique(self._mask_array)
-        for lbl in labels_in_array:
-            if lbl == 0:
-                continue  # background
-            if not self.mapping.has_label(int(lbl)):
-                self.mapping[f"idx_{lbl}"] = int(lbl)
-            self._existing_labels.add(int(lbl))
+    def _sync_labels_with_array(self):
+        """
+        Ensure that every label present in the mask array is defined in the semantic mapping.
+        If a label is missing, assign a default semantic name.
+        """
+        for label in self._existing_labels:
+            if not self.mapping.has_label(
+                label
+            ):  # If the semantic mapping lacks this label, add a default name.
+                self.mapping[f"idx_{label}"] = label
 
     # ------------------------------------------------------------------
     # Representation ----------------------------------------------------
     # ------------------------------------------------------------------
     def __str__(self) -> str:  # pragma: no cover (human readable)
         return (
-            f"SegmentationMask(shape={self.space.shape_zyx}, "
+            f"SegmentationMask(shape_zyx={self.space.shape_zyx}, "
             f"labels={sorted(self._existing_labels)}, mapping={self.mapping._name_to_label})"
         )
 
-
-# Backward-compatibility aliases -----------------------------------------
-# Mask = SegmentationMask 
