@@ -169,7 +169,7 @@ class MaskArchive:
             self.space = mask.space
         else:
             assert mask.space == self.space, "space mismatch between mask and archive"
-        return self.codec.encode(mask.get_all_masks())
+        return self.codec.encode(mask.data)
 
     # ------------------------------------------------------------------
     def _ensure_index_capacity(self, fp, hdr: Dict[str, int], req_len: int) -> Dict[str, int]:

@@ -60,7 +60,7 @@ def test_add_first_mask(temp_maskfile_file, space, sample_mask):
 
     # 读取并验证掩码
     loaded_mask = maskfile.load_mask("test_mask")
-    assert np.array_equal(loaded_mask.get_all_masks(), sample_mask.get_all_masks())
+    assert np.array_equal(loaded_mask.data, sample_mask.data)
     assert loaded_mask.space == sample_mask.space
     assert str(loaded_mask.mapping) == str(sample_mask.mapping)
 
@@ -87,9 +87,9 @@ def test_add_multiple_masks(temp_maskfile_file, space, sample_mask):
     loaded_masks = maskfile.read_all_masks()
     assert len(loaded_masks) == 2
     assert np.array_equal(
-        loaded_masks["mask1"].get_all_masks(), sample_mask.get_all_masks()
+        loaded_masks["mask1"].data, sample_mask.data
     )
-    assert np.array_equal(loaded_masks["mask2"].get_all_masks(), mask2.get_all_masks())
+    assert np.array_equal(loaded_masks["mask2"].data, mask2.data)
 
 
 def test_add_duplicate_mask(temp_maskfile_file, space, sample_mask):
@@ -154,7 +154,7 @@ def test_file_persistence(temp_maskfile_file, space, sample_mask):
 
     # 验证掩码数据
     loaded_mask = maskfile2.load_mask("test_mask")
-    assert np.array_equal(loaded_mask.get_all_masks(), sample_mask.get_all_masks())
+    assert np.array_equal(loaded_mask.data, sample_mask.data)
     assert str(loaded_mask.mapping) == str(sample_mask.mapping)
 
 
@@ -171,7 +171,7 @@ def test_large_mask(temp_maskfile_file, space):
     maskfile.add_mask(large_mask, "large_mask")
 
     loaded_mask = maskfile.load_mask("large_mask")
-    assert np.array_equal(loaded_mask.get_all_masks(), large_mask.get_all_masks())
+    assert np.array_equal(loaded_mask.data, large_mask.data)
 
 
 def test_semantic_mapping():

@@ -60,7 +60,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
     archive_write = MaskArchive(temp_archive_path, mode="w", space=test_space)
     
     mask_names = []
-    original_data = dummy_mask.get_all_masks().copy()
+    original_data = dummy_mask.data.copy()
     
     for i in range(num_masks):
         mask_name = f"mask_{i:03d}"
@@ -84,7 +84,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
     for mask_name in test_names:
         try:
             loaded_mask = archive_read.load_mask(mask_name)
-            loaded_data = loaded_mask.get_all_masks()
+            loaded_data = loaded_mask.data
             
             # 验证数据完整性
             assert loaded_data.shape == original_data.shape, f"Shape mismatch for {mask_name}"
@@ -155,8 +155,8 @@ def test_index_expansion_triggers_offset_update(temp_archive_path, test_space, d
             
             # 实际读取掩膜
             loaded_mask = archive_read.load_mask(mask_name)
-            loaded_data = loaded_mask.get_all_masks()
-            original_data = dummy_mask.get_all_masks()
+            loaded_data = loaded_mask.data
+            original_data = dummy_mask.data
             
             np.testing.assert_array_equal(loaded_data, original_data, 
                 err_msg=f"掩膜 {mask_name} 数据不匹配")
@@ -178,8 +178,8 @@ def test_simple_offset_bug_reproduction(temp_archive_path, test_space, dummy_mas
     # 这是最容易暴露偏移量bug的情况
     try:
         first_mask = archive.load_mask("mask_0")
-        data = first_mask.get_all_masks()
-        assert data.shape == dummy_mask.get_all_masks().shape
+        data = first_mask.data
+        assert data.shape == dummy_mask.data.shape
         print("✅ 偏移量bug已修复！")
     except Exception as e:
         pytest.fail(f"❌ 偏移量bug仍然存在: {e}")

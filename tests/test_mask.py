@@ -144,33 +144,33 @@ class TestMask:
         with pytest.raises(ValueError):
             mask.add_label(submask, 1, "region1_new")
 
-    def test_get_mask_by_names(self, mask_array, mapping, space):
+    def test_get_binary_mask_by_names(self, mask_array, mapping, space):
         """测试通过名称获取 mask"""
         mask = Mask(mask_array, mapping, space)
 
         # 测试获取单个 mask
-        result = mask.get_mask_by_names("region1")
+        result = mask.get_binary_mask_by_names("region1")
         expected = mask_array == 1
         np.testing.assert_array_equal(result, expected)
 
         # 测试获取多个 mask
-        result = mask.get_mask_by_names(["region1", "region2"])
+        result = mask.get_binary_mask_by_names(["region1", "region2"])
         expected = (mask_array == 1) | (mask_array == 2)
         np.testing.assert_array_equal(result, expected)
 
         # 测试不存在的名称
         with pytest.raises(KeyError):
-            mask.get_mask_by_names("nonexistent")
+            mask.get_binary_mask_by_names("nonexistent")
 
-    def test_get_all_masks(self, mask_array, mapping, space):
+    def test_data(self, mask_array, mapping, space):
         """测试获取所有 mask"""
         mask = Mask(mask_array, mapping, space)
 
         # 测试获取原始数组
-        np.testing.assert_array_equal(mask.get_all_masks(binarize=False), mask_array)
+        np.testing.assert_array_equal(mask.data, mask_array)
 
         # 测试获取二值化数组
-        np.testing.assert_array_equal(mask.get_all_masks(binarize=True), mask_array > 0)
+        np.testing.assert_array_equal(mask.to_binary(), mask_array > 0)
 
     def test_label_name_conversion(self, mask_array, mapping, space):
         """测试标签和名称之间的转换"""

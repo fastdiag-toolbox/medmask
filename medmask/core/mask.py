@@ -4,6 +4,7 @@ import json
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
+import warnings
 
 from spacetransformer import Space
 
@@ -134,19 +135,31 @@ class SegmentationMask:
     # ------------------------------------------------------------------
     # Query -------------------------------------------------------------
     # ------------------------------------------------------------------
-    def get_mask_by_names(self, names: Union[str, List[str]]) -> np.ndarray:
+    def get_binary_mask_by_names(self, names: Union[str, List[str]]) -> np.ndarray:
         if isinstance(names, str):
             return self._mask_array == self.mapping[names]
         labels = [self.mapping[n] for n in names]
-        return self.get_mask_by_labels(labels)
+        return self.get_binary_mask_by_labels(labels)
 
-    def get_mask_by_labels(self, labels: Union[int, List[int]]) -> np.ndarray:
+    def get_binary_mask_by_labels(self, labels: Union[int, List[int]]) -> np.ndarray:
         if isinstance(labels, int):
             return self._mask_array == labels
         return match_allowed_values(self._mask_array, labels)
 
-    def get_all_masks(self, *, binarize: bool = False) -> np.ndarray:
-        return self._mask_array.astype(bool) if binarize else self._mask_array
+    # ------------------------------------------------------------------
+    # Array access ------------------------------------------------------
+    # ------------------------------------------------------------------
+    @property
+    def data(self) -> np.ndarray:
+        """Raw ndarray with integer labels (read-only view)."""
+        arr = self._mask_array.view()
+        arr.flags.writeable = False  # ensure read-only
+        return arr
+
+    def to_binary(self) -> np.ndarray:
+        """Return a boolean array where non-zero voxels are *True*."""
+        return self._mask_array.astype(bool)
+
 
     # ------------------------------------------------------------------
     # Internal helpers --------------------------------------------------
