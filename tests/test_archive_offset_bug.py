@@ -14,7 +14,7 @@ import tempfile
 import os
 
 from medmask.archive import MaskArchive
-from medmask.core.mask import SegmentationMask
+from medmask.core.segmask import SegmentationMask
 from medmask.core.mapping import LabelMapping
 from spacetransformer import Space
 
@@ -64,7 +64,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
     
     for i in range(num_masks):
         mask_name = f"mask_{i:03d}"
-        archive_write.add_mask(dummy_mask, mask_name)
+        archive_write.add_segmask(dummy_mask, mask_name)
         mask_names.append(mask_name)
     
     # 验证归档文件已创建
@@ -83,7 +83,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
     
     for mask_name in test_names:
         try:
-            loaded_mask = archive_read.load_mask(mask_name)
+            loaded_mask = archive_read.load_segmask(mask_name)
             loaded_data = loaded_mask.data
             
             # 验证数据完整性
@@ -114,7 +114,7 @@ def test_index_expansion_triggers_offset_update(temp_archive_path, test_space, d
     # 添加60个掩膜，足够触发索引扩容
     for i in range(60):
         mask_name = f"test_mask_{i:03d}"
-        archive_write.add_mask(dummy_mask, mask_name)
+        archive_write.add_segmask(dummy_mask, mask_name)
         mask_names.append(mask_name)
     
     # 关闭写入句柄
@@ -154,7 +154,7 @@ def test_index_expansion_triggers_offset_update(temp_archive_path, test_space, d
                 assert not raw_data.startswith(indicator), f"掩膜 {mask_name} 的数据看起来像JSON，偏移量可能错误"
             
             # 实际读取掩膜
-            loaded_mask = archive_read.load_mask(mask_name)
+            loaded_mask = archive_read.load_segmask(mask_name)
             loaded_data = loaded_mask.data
             original_data = dummy_mask.data
             
@@ -172,12 +172,12 @@ def test_simple_offset_bug_reproduction(temp_archive_path, test_space, dummy_mas
     
     # 添加大量掩膜，确保触发索引扩容
     for i in range(120):  # 超过初始索引容量
-        archive.add_mask(dummy_mask, f"mask_{i}")
+        archive.add_segmask(dummy_mask, f"mask_{i}")
     
     # 立即在同一个session中尝试读取第一个掩膜
     # 这是最容易暴露偏移量bug的情况
     try:
-        first_mask = archive.load_mask("mask_0")
+        first_mask = archive.load_segmask("mask_0")
         data = first_mask.data
         assert data.shape == dummy_mask.data.shape
         print("✅ 偏移量bug已修复！")

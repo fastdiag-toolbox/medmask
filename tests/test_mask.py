@@ -5,7 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pytest
 
-from medmask.core.mask import SegmentationMask as Mask
+from medmask.core.segmask import SegmentationMask as Mask
 from medmask.core.mapping import LabelMapping
 from spacetransformer import Space
 
@@ -128,7 +128,7 @@ class TestMask:
             mask = Mask.lazy_init(bit_depth, space=space)
             assert mask._mask_array.dtype == dtype
 
-    def test_add_mask(self, space):
+    def test_add_segmask(self, space):
         """测试添加单个 mask"""
         mask = Mask.lazy_init(8, space=space)
 

@@ -20,7 +20,7 @@ from medmask.compression import get_codec
 from medmask.core.mapping import LabelMapping
 
 if TYPE_CHECKING:  # pragma: no cover – for type checkers only
-    from medmask.core.mask import SegmentationMask  # noqa: F401
+    from medmask.core.segmask import SegmentationMask  # noqa: F401
     Mask = SegmentationMask  # noqa: F401 – legacy alias
 
 __all__ = ["MaskArchive"]
@@ -162,14 +162,14 @@ class MaskArchive:
     # ------------------------------------------------------------------
     # Data preparation --------------------------------------------------
     # ------------------------------------------------------------------
-    def _prepare_data(self, mask: "SegmentationMask") -> bytes:
+    def _prepare_data(self, segmask: "SegmentationMask") -> bytes:
         if self.space is None:
-            if mask.space is None:
-                raise ValueError("space undefined for both archive and mask")
-            self.space = mask.space
+            if segmask.space is None:
+                raise ValueError("space undefined for both archive and segmask")
+            self.space = segmask.space
         else:
-            assert mask.space == self.space, "space mismatch between mask and archive"
-        return self.codec.encode(mask.data)
+            assert segmask.space == self.space, "space mismatch between segmask and archive"
+        return self.codec.encode(segmask.data)
 
     # ------------------------------------------------------------------
     def _ensure_index_capacity(self, fp, hdr: Dict[str, int], req_len: int) -> Dict[str, int]:
@@ -193,11 +193,11 @@ class MaskArchive:
     # ------------------------------------------------------------------
     # Public API --------------------------------------------------------
     # ------------------------------------------------------------------
-    def add_mask(self, mask: "SegmentationMask", name: str) -> None:
-        data_blob = self._prepare_data(mask)
+    def add_segmask(self, segmask: "SegmentationMask", name: str) -> None:
+        data_blob = self._prepare_data(segmask)
         idx_list = self._read_index() if os.path.exists(self.path) else []
         if any(e["name"] == name for e in idx_list):
-            raise ValueError(f"Mask {name} already exists")
+            raise ValueError(f"SegmentationMask {name} already exists")
 
         # compute or read header
         if not idx_list:
@@ -221,7 +221,7 @@ class MaskArchive:
 
         # write to disk
         with open(self.path, "r+b" if os.path.exists(self.path) else "wb") as fp:
-            # write space JSON if first mask
+            # write space JSON if first segmask
             if hdr["mask_count"] == 0:
                 fp.seek(hdr["space_offset"])
                 fp.write(self.space.to_json().encode("utf-8"))
@@ -245,7 +245,7 @@ class MaskArchive:
                     "name": name,
                     "offset": offset,
                     "length": length,
-                    "mapping": mask.mapping._name_to_label,
+                    "mapping": segmask.mapping._name_to_label,
                 }
             )
 
@@ -272,16 +272,16 @@ class MaskArchive:
     # ------------------------------------------------------------------
     # Reading -----------------------------------------------------------
     # ------------------------------------------------------------------
-    def load_mask(self, name: str) -> "SegmentationMask":
+    def load_segmask(self, name: str) -> "SegmentationMask":
         matches = [e for e in self._read_index() if e["name"] == name]
         if not matches:
-            raise ValueError(f"Mask {name} not found")
+            raise ValueError(f"SegmentationMask {name} not found")
         entry = matches[0]
         with open(self.path, "rb") as fp:
             fp.seek(entry["offset"])
             blob = fp.read(entry["length"])
 
-        from medmask.core.mask import SegmentationMask  # local import to avoid cycle
+        from medmask.core.segmask import SegmentationMask  # local import to avoid cycle
 
         arr = self.codec.decode(blob)
         mapping = LabelMapping(entry["mapping"])
@@ -295,4 +295,4 @@ class MaskArchive:
         return {e["name"]: LabelMapping(e["mapping"]) for e in self._read_index()}
 
     def read_all_masks(self) -> Dict[str, "SegmentationMask"]:
-        return {n: self.load_mask(n) for n in self.all_names()} 
+        return {n: self.load_segmask(n) for n in self.all_names()} 

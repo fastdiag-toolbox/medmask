@@ -5,7 +5,7 @@ A specialized library for efficient compression, storage, and processing of
 medical image segmentation masks.
 """
 
-from .core.mask import SegmentationMask
+from .core.segmask import SegmentationMask
 from .core.mapping import LabelMapping
 from .archive import MaskArchive
 from .io.utils import match_allowed_values

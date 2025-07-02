@@ -2,7 +2,7 @@
 Core functionality for medical mask processing.
 """
 
-from .mask import SegmentationMask
+from .segmask import SegmentationMask
 from .mapping import LabelMapping
 
 __all__ = ["SegmentationMask", "LabelMapping"] 

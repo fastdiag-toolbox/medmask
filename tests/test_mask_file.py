@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from medmask.archive import MaskArchive as MaskFile
-from medmask.core.mask import SegmentationMask as Mask
+from medmask.core.segmask import SegmentationMask as Mask
 from medmask.core.mapping import LabelMapping
 from spacetransformer import Space
 
@@ -50,7 +50,7 @@ def test_create_empty_file(temp_maskfile_file, space):
 def test_add_first_mask(temp_maskfile_file, space, sample_mask):
     """测试添加第一个掩码"""
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(sample_mask, "test_mask")
+    maskfile.add_segmask(sample_mask, "test_mask")
 
     # 验证文件已创建
     assert os.path.exists(temp_maskfile_file)
@@ -59,7 +59,7 @@ def test_add_first_mask(temp_maskfile_file, space, sample_mask):
     assert maskfile.all_names() == ["test_mask"]
 
     # 读取并验证掩码
-    loaded_mask = maskfile.load_mask("test_mask")
+    loaded_mask = maskfile.load_segmask("test_mask")
     assert np.array_equal(loaded_mask.data, sample_mask.data)
     assert loaded_mask.space == sample_mask.space
     assert str(loaded_mask.mapping) == str(sample_mask.mapping)
@@ -70,7 +70,7 @@ def test_add_multiple_masks(temp_maskfile_file, space, sample_mask):
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
 
     # 添加第一个掩码
-    maskfile.add_mask(sample_mask, "mask1")
+    maskfile.add_segmask(sample_mask, "mask1")
 
     # 创建并添加第二个掩码
     mask2_array = np.zeros((30, 20, 10), dtype=np.uint8)
@@ -78,7 +78,7 @@ def test_add_multiple_masks(temp_maskfile_file, space, sample_mask):
     mapping2 = LabelMapping()
     mapping2["region3"] = 3
     mask2 = Mask(mask2_array, mapping=mapping2, space=space)
-    maskfile.add_mask(mask2, "mask2")
+    maskfile.add_segmask(mask2, "mask2")
 
     # 验证掩码列表
     assert set(maskfile.all_names()) == {"mask1", "mask2"}
@@ -95,26 +95,26 @@ def test_add_multiple_masks(temp_maskfile_file, space, sample_mask):
 def test_add_duplicate_mask(temp_maskfile_file, space, sample_mask):
     """测试添加重复名称的掩码"""
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(sample_mask, "test_mask")
+    maskfile.add_segmask(sample_mask, "test_mask")
 
     # 尝试添加同名掩码
     with pytest.raises(ValueError, match="Mask test_mask already exists"):
-        maskfile.add_mask(sample_mask, "test_mask")
+        maskfile.add_segmask(sample_mask, "test_mask")
 
 
 def test_load_nonexistent_mask(temp_maskfile_file, space, sample_mask):
     """测试加载不存在的掩码"""
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(sample_mask, "test_mask")
+    maskfile.add_segmask(sample_mask, "test_mask")
 
     with pytest.raises(ValueError, match="Mask nonexistent not found"):
-        maskfile.load_mask("nonexistent")
+        maskfile.load_segmask("nonexistent")
 
 
 def test_space_mismatch(temp_maskfile_file, space, sample_mask):
     """测试空间不匹配的情况"""
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(sample_mask, "mask1")
+    maskfile.add_segmask(sample_mask, "mask1")
 
     # 创建一个不同的空间
     different_space = Space(shape=(10, 20, 31), spacing=(1.0, 1.0, 1.0))
@@ -125,13 +125,13 @@ def test_space_mismatch(temp_maskfile_file, space, sample_mask):
 
     # 尝试添加空间不匹配的掩码
     with pytest.raises(AssertionError):
-        maskfile.add_mask(different_mask, "mask2")
+        maskfile.add_segmask(different_mask, "mask2")
 
 
 def test_read_all_mapping(temp_maskfile_file, space, sample_mask):
     """测试读取所有语义映射"""
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(sample_mask, "test_mask")
+    maskfile.add_segmask(sample_mask, "test_mask")
 
     mapping_dict = maskfile.read_all_mapping()
     assert len(mapping_dict) == 1
@@ -144,7 +144,7 @@ def test_file_persistence(temp_maskfile_file, space, sample_mask):
     """测试文件持久化"""
     # 创建文件并添加掩码
     maskfile1 = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile1.add_mask(sample_mask, "test_mask")
+    maskfile1.add_segmask(sample_mask, "test_mask")
 
     # 创建新的 MaskFile 实例读取同一个文件
     maskfile2 = MaskFile(temp_maskfile_file)
@@ -153,7 +153,7 @@ def test_file_persistence(temp_maskfile_file, space, sample_mask):
     assert maskfile2.space == space
 
     # 验证掩码数据
-    loaded_mask = maskfile2.load_mask("test_mask")
+    loaded_mask = maskfile2.load_segmask("test_mask")
     assert np.array_equal(loaded_mask.data, sample_mask.data)
     assert str(loaded_mask.mapping) == str(sample_mask.mapping)
 
@@ -168,9 +168,9 @@ def test_large_mask(temp_maskfile_file, space):
 
     # 添加并读取大型掩码
     maskfile = MaskFile(temp_maskfile_file, "w", space=space)
-    maskfile.add_mask(large_mask, "large_mask")
+    maskfile.add_segmask(large_mask, "large_mask")
 
-    loaded_mask = maskfile.load_mask("large_mask")
+    loaded_mask = maskfile.load_segmask("large_mask")
     assert np.array_equal(loaded_mask.data, large_mask.data)
 
 

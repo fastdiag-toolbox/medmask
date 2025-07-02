@@ -71,13 +71,13 @@ mask.add_label(spleen_data > 0, label=2, name="spleen")
 archive = MaskArchive("organs.maska", mode="w", space=space)
 
 # Add multiple masks
-archive.add_mask(liver_mask, "liver")
-archive.add_mask(heart_mask, "heart")
-archive.add_mask(lung_mask, "lung")
+archive.add_segmask(liver_mask, "liver")
+archive.add_segmask(heart_mask, "heart")
+archive.add_segmask(lung_mask, "lung")
 
 # Read archive
 archive = MaskArchive("organs.maska", mode="r")
-liver = archive.load_mask("liver")
+liver = archive.load_segmask("liver")
 all_organs = archive.read_all_masks()
 ```
 
@@ -90,15 +90,15 @@ ribs_archive = MaskArchive("ribs.maska", mode="w", space=space)
 # Individual ribs
 for i in range(1, 13):
     left_rib = load_rib_data(f"rib_left_{i}")
-    ribs_archive.add_mask(left_rib, f"left_rib_{i}")
+    ribs_archive.add_segmask(left_rib, f"left_rib_{i}")
 
 # Combined masks
 all_left_ribs = combine_masks([f"left_rib_{i}" for i in range(1, 13)])
-ribs_archive.add_mask(all_left_ribs, "left_ribs")
+ribs_archive.add_segmask(all_left_ribs, "left_ribs")
 
 # Flexible queries
-single_rib = ribs_archive.load_mask("left_rib_5")
-all_left = ribs_archive.load_mask("left_ribs")
+single_rib = ribs_archive.load_segmask("left_rib_5")
+all_left = ribs_archive.load_segmask("left_ribs")
 ```
 
 ## 📊 Performance Comparison
@@ -165,10 +165,10 @@ Multi-mask archive container with efficient compression storage.
 archive = MaskArchive("file.maska", mode="w", space=space, codec="zstd")
 
 # Add mask
-archive.add_mask(mask, "organ_name")
+archive.add_segmask(mask, "organ_name")
 
 # Load mask
-mask = archive.load_mask("organ_name")
+mask = archive.load_segmask("organ_name")
 
 # Batch operations
 all_names = archive.all_names()
@@ -204,9 +204,9 @@ exists = mapping.has_label(1)   # Check label: True
 ```python
 # Organ-level independent processing
 liver_archive = MaskArchive("liver_variants.maska", mode="w")
-liver_archive.add_mask(normal_liver, "normal_liver")
-liver_archive.add_mask(fatty_liver, "fatty_liver")
-liver_archive.add_mask(cirrhotic_liver, "cirrhotic_liver")
+liver_archive.add_segmask(normal_liver, "normal_liver")
+liver_archive.add_segmask(fatty_liver, "fatty_liver")
+liver_archive.add_segmask(cirrhotic_liver, "cirrhotic_liver")
 ```
 
 ### Combined Mask Approach
@@ -224,7 +224,7 @@ for i, organ_name in enumerate(organ_names, 1):
     organ_data = load_organ(organ_name)
     combined.add_label(organ_data, i, organ_name)
 
-archive.add_mask(combined, "whole_body_organs")
+archive.add_segmask(combined, "whole_body_organs")
 ```
 
 ### Overlapping Mask Applications
@@ -239,15 +239,15 @@ archive.add_mask(combined, "whole_body_organs")
 vessels_archive = MaskArchive("vessels.maska", mode="w")
 
 # Fine-grained
-vessels_archive.add_mask(aorta, "aorta")
-vessels_archive.add_mask(pulmonary_artery, "pulmonary_artery")
+vessels_archive.add_segmask(aorta, "aorta")
+vessels_archive.add_segmask(pulmonary_artery, "pulmonary_artery")
 
 # Medium-grained  
-vessels_archive.add_mask(arterial_system, "arterial_system")
-vessels_archive.add_mask(venous_system, "venous_system")
+vessels_archive.add_segmask(arterial_system, "arterial_system")
+vessels_archive.add_segmask(venous_system, "venous_system")
 
 # Coarse-grained
-vessels_archive.add_mask(all_vessels, "vascular_system")
+vessels_archive.add_segmask(all_vessels, "vascular_system")
 ```
 
 ## 🔧 Advanced Usage
@@ -275,7 +275,7 @@ def batch_add_nifti(archive, nifti_dir):
             {organ_name: 1},
             Space.from_nifty(nii)
         )
-        archive.add_mask(mask, organ_name)
+        archive.add_segmask(mask, organ_name)
 ```
 
 ### Mask Operations
@@ -283,16 +283,16 @@ def batch_add_nifti(archive, nifti_dir):
 ```python
 # Mask combination operations
 def combine_organs(archive, organ_names, new_name):
-    combined_data = np.zeros_like(archive.load_mask(organ_names[0]).data)
+    combined_data = np.zeros_like(archive.load_segmask(organ_names[0]).data)
     
     for organ in organ_names:
-        mask = archive.load_mask(organ)
+        mask = archive.load_segmask(organ)
         combined_data |= mask.data
     
     combined_mask = SegmentationMask(
         combined_data, {new_name: 1}, archive.space
     )
-    archive.add_mask(combined_mask, new_name)
+    archive.add_segmask(combined_mask, new_name)
 ```
 
 ## 📁 Project Structure
