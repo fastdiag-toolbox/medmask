@@ -13,7 +13,7 @@ import pytest
 import tempfile
 import os
 
-from medmask.archive import MaskArchive
+from medmask.storage import MaskArchive
 from medmask.core.segmask import SegmentationMask
 from medmask.core.mapping import LabelMapping
 from spacetransformer import Space

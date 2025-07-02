@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-"""Binary *MaskArchive* (*.maska*) container.
+"""Binary *MaskArchive* container (.maska).
 
-Design goals compared with the legacy *MaskFile* (DCBM):
- • Magic number changed to ``b"MSKA"``
- • Compression codec is pluggable via :pymod:`medmask.compression`
- • API kept almost identical for smooth migration
+Multi-mask archive format providing random access and compression.
+This file is migrated from the former ``medmask.archive.archive_file`` module
+so that all persistence code now resides in ``medmask.storage``.
 """
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -19,32 +18,29 @@ from spacetransformer import Space
 from medmask.compression import get_codec
 from medmask.core.mapping import LabelMapping
 
-if TYPE_CHECKING:  # pragma: no cover – for type checkers only
+if TYPE_CHECKING:  # pragma: no cover – for type checking only
     from medmask.core.segmask import SegmentationMask  # noqa: F401
-    Mask = SegmentationMask  # noqa: F401 – legacy alias
 
 __all__ = ["MaskArchive"]
 
 
 class MaskArchive:
-    """Light-weight container storing multiple segmentation masks.
+    """Container storing multiple segmentation masks in one file.
 
-    The on-disk layout inherits from *DCBM* but is simplified:
+    On-disk layout::
 
-    ``
-    Header (100 B)
-        magic     "MSKA" (4)
-        version   0x0100 (2 bytes)  • major/minor
-        codec_id  (B)
-        reserved  (1 B)
-        space_offset, space_length
-        index_offset, index_length
-        data_offset, data_length
-        mask_count
-        reserved (24 B)
-    ``
+        Header (100 B)
+            magic       "MSKA" (4)
+            version     0x0100 (2 bytes)  • major/minor
+            codec_id    (B)
+            reserved    (1 B)
+            space_offset, space_length   (Q, Q)
+            index_offset, index_length   (Q, Q)
+            data_offset,  data_length    (Q, Q)
+            mask_count                   (Q)
+            reserved (24 B)
 
-    Fixed-sized header (100 B) eases random access and future expansion.
+    Fixed-size 100-byte header simplifies random access and future extension.
     """
 
     MAGIC_NUMBER = b"MSKA"
@@ -54,12 +50,12 @@ class MaskArchive:
 
     MAX_INDEX_LENGTH = 4000  # bytes reserved for JSON index initially
 
-    # ---------------------------------------------------------------------
+    # ------------------------------------------------------------------
     def __init__(self, path: str, mode: str = "r", *, space: Optional[Space] = None, codec: str | None = None):
         self.path = path
         self.mode = mode
         self.space = space
-        self.codec = get_codec(codec)  # default zstd
+        self.codec = get_codec(codec)  # defaults to zstd
         self._header_cache: Optional[Dict[str, int]] = None
 
         if os.path.exists(path) and mode in {"r", "a"}:
@@ -104,7 +100,7 @@ class MaskArchive:
 
     def _read_header(self) -> Dict[str, int]:
         if not os.path.exists(self.path):
-            # return zeros when file absent – simplifies first-write logic
+            # return zeros when absent – simplifies first-write logic
             return {k: 0 for k in ("space_offset", "space_length", "index_offset", "index_length", "data_offset", "data_length", "mask_count")}
 
         with open(self.path, "rb") as fp:
@@ -197,7 +193,7 @@ class MaskArchive:
         data_blob = self._prepare_data(segmask)
         idx_list = self._read_index() if os.path.exists(self.path) else []
         if any(e["name"] == name for e in idx_list):
-            raise ValueError(f"SegmentationMask {name} already exists")
+            raise ValueError(f"Mask {name} already exists")
 
         # compute or read header
         if not idx_list:
@@ -230,14 +226,14 @@ class MaskArchive:
             json_bytes = json.dumps(idx_list).encode("utf-8")
             old_data_offset = hdr["data_offset"]
             hdr = self._ensure_index_capacity(fp, hdr, len(json_bytes) + 200)  # extra space for new entry
-            
+
             # if data was relocated, update all existing entry offsets
             if hdr["data_offset"] != old_data_offset:
                 offset_delta = hdr["data_offset"] - old_data_offset
                 for entry in idx_list:
                     entry["offset"] += offset_delta
-            
-            # place new blob at end (after potential data relocation)
+
+            # place new blob at end
             offset = hdr["data_offset"] + hdr["data_length"]
             length = len(data_blob)
             idx_list.append(
@@ -249,9 +245,9 @@ class MaskArchive:
                 }
             )
 
-            # re-serialize with the new entry
+            # re-serialize index including new entry
             json_bytes = json.dumps(idx_list).encode("utf-8")
-            
+
             # write index (zero-padded)
             fp.seek(hdr["index_offset"])
             fp.write(json_bytes)
@@ -275,19 +271,19 @@ class MaskArchive:
     def load_segmask(self, name: str) -> "SegmentationMask":
         matches = [e for e in self._read_index() if e["name"] == name]
         if not matches:
-            raise ValueError(f"SegmentationMask {name} not found")
+            raise ValueError(f"Mask {name} not found")
         entry = matches[0]
         with open(self.path, "rb") as fp:
             fp.seek(entry["offset"])
             blob = fp.read(entry["length"])
 
-        from medmask.core.segmask import SegmentationMask  # local import to avoid cycle
+        from medmask.core.segmask import SegmentationMask  # import here to avoid cycle
 
         arr = self.codec.decode(blob)
         mapping = LabelMapping(entry["mapping"])
         return SegmentationMask(arr, mapping, space=self.space)
 
-    # helpers
+    # helpers -----------------------------------------------------------
     def all_names(self) -> List[str]:
         return [e["name"] for e in self._read_index()]
 
@@ -295,4 +291,4 @@ class MaskArchive:
         return {e["name"]: LabelMapping(e["mapping"]) for e in self._read_index()}
 
     def read_all_masks(self) -> Dict[str, "SegmentationMask"]:
-        return {n: self.load_segmask(n) for n in self.all_names()} 
+        return {n: self.load_segmask(n) for n in self.all_names()}  # noqa: E501 

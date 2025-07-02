@@ -184,3 +184,19 @@ class SegmentationMask:
             f"labels={sorted(self._existing_labels)}, mapping={self.mapping._name_to_label})"
         )
 
+    # ------------------------------------------------------------------
+    # Persistence ------------------------------------------------------
+    # ------------------------------------------------------------------
+    def save(self, path: str, *, codec: str | None = None) -> None:
+        """Save this mask to *path* using the storage layer (`MaskFile`)."""
+        from ..storage import save_mask  # local import to avoid heavy deps
+
+        save_mask(self, path, codec=codec)
+
+    @classmethod
+    def load(cls, path: str):  # noqa: D401 – simple wrapper
+        """Load a mask from *path* (.msk) and return a new `SegmentationMask`."""
+        from ..storage import load_mask
+
+        return load_mask(path)
+
