@@ -8,7 +8,7 @@ medical image segmentation masks.
 from .core.segmask import SegmentationMask
 from .core.mapping import LabelMapping
 from .archive import MaskArchive
-from .io.utils import match_allowed_values
+from .utils.utils import match_allowed_values
 
 __version__ = "1.1.0"
 __all__ = [

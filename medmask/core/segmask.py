@@ -8,7 +8,7 @@ import warnings
 
 from spacetransformer import Space
 
-from ..io.utils import match_allowed_values
+from ..utils.utils import match_allowed_values
 from .mapping import LabelMapping
 
 __all__ = ["SegmentationMask", "Mask"]

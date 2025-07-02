@@ -193,7 +193,7 @@ exists = mapping.has_label(1)   # Check label: True
 
 ## 💡 Use Cases
 
-### Independent Mask Approach
+### Independent SegMask Approach
 **Suitable for:**
 - Frequent access to individual organs
 - Independent modification of specific regions  
@@ -209,7 +209,7 @@ liver_archive.add_segmask(fatty_liver, "fatty_liver")
 liver_archive.add_segmask(cirrhotic_liver, "cirrhotic_liver")
 ```
 
-### Combined Mask Approach
+### Combined SegMask Approach
 **Suitable for:**
 - Global organ analysis
 - Unified label management
