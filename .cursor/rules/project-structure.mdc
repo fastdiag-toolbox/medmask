@@ -12,7 +12,7 @@ alwaysApply: false
    • [`mapping.py`](mdc:medmask/core/mapping.py)：实现 `LabelMapping`，提供 label 与语义名称的双向映射。
 
 2. `medmask.archive` – 多 mask 容器格式
-   • [`archive_file.py`](mdc:medmask/archive/archive_file.py)：实现二进制 *.maska* 文件读写的 `MaskArchive` 类，支持随机访问与可插拔压缩。
+   • [`archive_file.py`](mdc:medmask/archive/archive_file.py)：实现二进制 *.mska* 文件读写的 `MaskArchive` 类，支持随机访问与可插拔压缩。
 
 3. `medmask.compression` – 压缩编解码器注册表 
    • [`__init__.py`](mdc:medmask/compression/__init__.py)：注册编解码器并暴露 `get_codec`。
@@ -29,7 +29,7 @@ from medmask.core import SegmentationMask, LabelMapping
 • 读写多 mask 容器:
 ```python
 from medmask.archive import MaskArchive
-archive = MaskArchive('case001.maska', mode='w', space=space)
+archive = MaskArchive('case001.mska', mode='w', space=space)
 archive.add_segmask(seg_mask, name='artery')
 ```
 

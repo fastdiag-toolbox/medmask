@@ -1,5 +1,8 @@
 trash
-*.maska
+*.mska
+*.msk
+*.nii
+*.nii.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

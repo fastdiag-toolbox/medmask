@@ -22,7 +22,7 @@ from spacetransformer import Space
 @pytest.fixture
 def temp_archive_path():
     """创建临时归档文件路径"""
-    with tempfile.NamedTemporaryFile(suffix='.maska', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.mska', delete=False) as f:
         temp_path = f.name
     yield temp_path
     # 清理临时文件

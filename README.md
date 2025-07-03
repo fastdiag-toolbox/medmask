@@ -68,7 +68,7 @@ mask.add_label(spleen_data > 0, label=2, name="spleen")
 
 ```python
 # Create archive
-archive = MaskArchive("organs.maska", mode="w", space=space)
+archive = MaskArchive("organs.mska", mode="w", space=space)
 
 # Add multiple masks
 archive.add_segmask(liver_mask, "liver")
@@ -76,7 +76,7 @@ archive.add_segmask(heart_mask, "heart")
 archive.add_segmask(lung_mask, "lung")
 
 # Read archive
-archive = MaskArchive("organs.maska", mode="r")
+archive = MaskArchive("organs.mska", mode="r")
 liver = archive.load_segmask("liver")
 all_organs = archive.read_all_masks()
 ```
@@ -85,7 +85,7 @@ all_organs = archive.read_all_masks()
 
 ```python
 # Multi-level rib archive
-ribs_archive = MaskArchive("ribs.maska", mode="w", space=space)
+ribs_archive = MaskArchive("ribs.mska", mode="w", space=space)
 
 # Individual ribs
 for i in range(1, 13):
@@ -105,7 +105,7 @@ all_left = ribs_archive.load_segmask("left_ribs")
 
 | Metric | Traditional | MedMask | Improvement |
 |--------|-------------|---------|-------------|
-| **File Count** | 117 .nii.gz files | 1 .maska file | 117:1 |
+| **File Count** | 117 .nii.gz files | 1 .mska file | 117:1 |
 | **Storage Size** | 5.12 MB | 92 KB | 56.7:1 |
 | **Read Time** | 1.869s | 0.117s | 16.0x |
 | **File Management** | Complex | Simple | ✓ |
@@ -162,7 +162,7 @@ Multi-mask archive container with efficient compression storage.
 
 ```python
 # Create/open archive
-archive = MaskArchive("file.maska", mode="w", space=space, codec="zstd")
+archive = MaskArchive("file.mska", mode="w", space=space, codec="zstd")
 
 # Add mask
 archive.add_segmask(mask, "organ_name")
@@ -203,7 +203,7 @@ exists = mapping.has_label(1)   # Check label: True
 **Example:**
 ```python
 # Organ-level independent processing
-liver_archive = MaskArchive("liver_variants.maska", mode="w")
+liver_archive = MaskArchive("liver_variants.mska", mode="w")
 liver_archive.add_segmask(normal_liver, "normal_liver")
 liver_archive.add_segmask(fatty_liver, "fatty_liver")
 liver_archive.add_segmask(cirrhotic_liver, "cirrhotic_liver")
@@ -236,7 +236,7 @@ archive.add_segmask(combined, "whole_body_organs")
 **Example:**
 ```python
 # Hierarchical organization of vascular system
-vessels_archive = MaskArchive("vessels.maska", mode="w")
+vessels_archive = MaskArchive("vessels.mska", mode="w")
 
 # Fine-grained
 vessels_archive.add_segmask(aorta, "aorta")
@@ -256,8 +256,8 @@ vessels_archive.add_segmask(all_vessels, "vascular_system")
 
 ```python
 # Use different compression algorithms
-archive = MaskArchive("data.maska", mode="w", codec="lz4")  # Faster compression
-archive = MaskArchive("data.maska", mode="w", codec="zstd") # Higher compression ratio
+archive = MaskArchive("data.mska", mode="w", codec="lz4")  # Faster compression
+archive = MaskArchive("data.mska", mode="w", codec="zstd") # Higher compression ratio
 ```
 
 ### Batch Processing

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 This package provides:
 1. `MaskFile` – single‐mask container (.msk)
-2. `MaskArchive` – multi‐mask archive (.maska)
+2. `MaskArchive` – multi‐mask archive (.mska)
 3. Convenience helpers `save_mask`, `load_mask` for functional usage.
 """
 

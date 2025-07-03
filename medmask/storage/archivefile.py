@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Binary *MaskArchive* container (.maska).
+"""Binary *MaskArchive* container (.mska).
 
 Multi-mask archive format providing random access and compression.
 This file is migrated from the former ``medmask.archive.archive_file`` module
