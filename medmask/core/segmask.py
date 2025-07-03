@@ -164,8 +164,6 @@ class SegmentationMask:
         arr.flags.writeable = False
         return arr
 
-    # Alias for backward compatibility – native order
-    data_native = data
 
     @property
     def data_aligned(self) -> np.ndarray:
