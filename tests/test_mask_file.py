@@ -28,7 +28,7 @@ def sample_mask(space):
     arr = np.zeros((24, 16, 8), dtype=np.uint8)
     arr[5:15, 4:12, 2:6] = 1
     mapping = LabelMapping({"lesion": 1})
-    return SegmentationMask(arr, mapping, space)
+    return SegmentationMask(arr, mapping, space, axis_reversed=True)
 
 
 # -----------------------------------------------------------------------------

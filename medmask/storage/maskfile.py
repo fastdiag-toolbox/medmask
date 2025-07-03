@@ -32,8 +32,8 @@ class MaskFile:
     MAGIC_NUMBER = b"MSK1"
     VERSION = (1, 0)  # major, minor
 
-    # <4s 2B B 1x 6Q 8x> = 64 B total
-    HEADER_STRUCT = "<4s2B B 1x 6Q 8x"
+    # <4s 2B B B 6Q 7x> = 64 B total
+    HEADER_STRUCT = "<4s2B B B 6Q 7x"
 
     def __init__(self, path: str, mode: str = "r", *, codec: str | None = None):
         self.path = path
@@ -62,6 +62,7 @@ class MaskFile:
             major,
             minor,
             self.codec.id,
+            kw["axis_flag"],
             kw["space_offset"],
             kw["space_length"],
             kw["mapping_offset"],
@@ -82,6 +83,7 @@ class MaskFile:
             ver_major,
             ver_minor,
             codec_id,
+            axis_flag,
             space_offset,
             space_length,
             mapping_offset,
@@ -105,6 +107,7 @@ class MaskFile:
             "mapping_length": mapping_length,
             "data_offset": data_offset,
             "data_length": data_length,
+            "axis_flag": axis_flag,
         }
 
     # ------------------------------------------------------------------
@@ -131,6 +134,7 @@ class MaskFile:
             # header first
             self._write_header(
                 fp,
+                axis_flag=int(segmask.axis_reversed),
                 space_offset=space_offset,
                 space_length=space_length,
                 mapping_offset=mapping_offset,
@@ -153,6 +157,7 @@ class MaskFile:
             "mapping_length": mapping_length,
             "data_offset": data_offset,
             "data_length": data_length,
+            "axis_flag": int(segmask.axis_reversed),
         }
 
     # ------------------------------------------------------------------
@@ -173,7 +178,8 @@ class MaskFile:
             data_b = fp.read(hdr["data_length"])
             arr = self.codec.decode(data_b)
 
-        return SegmentationMask(arr, mapping, space=space)
+        axis_reversed = bool(hdr.get("axis_flag", 0))
+        return SegmentationMask(arr, mapping, space=space, axis_reversed=axis_reversed)
 
     # ------------------------------------------------------------------
     @property

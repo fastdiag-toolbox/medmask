@@ -98,39 +98,39 @@ class TestMask:
     def test_init(self, mask_array, mapping, space):
         """测试初始化"""
         # 测试完整初始化
-        mask = Mask(mask_array, mapping, space)
+        mask = Mask(mask_array, mapping, space, axis_reversed=True)
         assert mask.space == space
         np.testing.assert_array_equal(mask._mask_array, mask_array)
         assert mask.mapping["region1"] == 1
         assert mask.mapping["region2"] == 2
 
         # 测试不带 space 初始化
-        mask = Mask(mask_array, mapping)
+        mask = Mask(mask_array, mapping, axis_reversed=True)
         assert mask.space.shape == mask_array.shape[::-1]
 
     def test_lazy_init(self, space):
         """测试延迟初始化"""
         # 使用 space 初始化
-        mask = Mask.lazy_init(8, space=space)
+        mask = Mask.lazy_init(8, space=space, axis_reversed=True)
         assert mask.space == space
         assert mask._mask_array.dtype == np.uint8
         assert mask._mask_array.shape == space.shape[::-1]
 
         # 使用 shape 初始化
         shape = (10, 10, 10)
-        mask = Mask.lazy_init(8, shape_zyx=shape)
+        mask = Mask.lazy_init(8, shape=shape, axis_reversed=True)
         assert mask.space.shape == shape[::-1]
         assert mask._mask_array.shape == shape
 
         # 测试不同位深
         bit_depths = {1: np.bool_, 8: np.uint8, 16: np.uint16, 32: np.uint32}
         for bit_depth, dtype in bit_depths.items():
-            mask = Mask.lazy_init(bit_depth, space=space)
+            mask = Mask.lazy_init(bit_depth, space=space, axis_reversed=True)
             assert mask._mask_array.dtype == dtype
 
     def test_add_segmask(self, space):
         """测试添加单个 mask"""
-        mask = Mask.lazy_init(8, space=space)
+        mask = Mask.lazy_init(8, space=space, axis_reversed=True)
 
         # 添加第一个 mask
         submask = np.zeros(space.shape[::-1], dtype=bool)
@@ -146,7 +146,7 @@ class TestMask:
 
     def test_get_binary_mask_by_names(self, mask_array, mapping, space):
         """测试通过名称获取 mask"""
-        mask = Mask(mask_array, mapping, space)
+        mask = Mask(mask_array, mapping, space, axis_reversed=True)
 
         # 测试获取单个 mask
         result = mask.get_binary_mask_by_names("region1")
@@ -164,7 +164,7 @@ class TestMask:
 
     def test_data(self, mask_array, mapping, space):
         """测试获取所有 mask"""
-        mask = Mask(mask_array, mapping, space)
+        mask = Mask(mask_array, mapping, space, axis_reversed=True)
 
         # 测试获取原始数组
         np.testing.assert_array_equal(mask.data, mask_array)
@@ -174,7 +174,7 @@ class TestMask:
 
     def test_label_name_conversion(self, mask_array, mapping, space):
         """测试标签和名称之间的转换"""
-        mask = Mask(mask_array, mapping, space)
+        mask = Mask(mask_array, mapping, space, axis_reversed=True)
 
         assert mask.mapping["region1"] == 1
         assert mask.mapping["region2"] == 2

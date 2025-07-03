@@ -39,19 +39,26 @@ class SegmentationMask:
         mask_array: np.ndarray,
         mapping: Union[Dict[str, int], LabelMapping],
         space: Optional[Space] = None,
+        *,
+        axis_reversed: bool = False,
     ) -> None:
-        # ---------- space ---------------------------------------------
+        # ----------------------------------------------------------
+        self.axis_reversed: bool = axis_reversed
+
+        # Handle space & shape consistency
         if space is not None:
-            # sanity check – ensure shape matches
-            assert np.allclose(
-                space.shape_zyx, mask_array.shape
-            ), f"space.shape_zyx: {space.shape_zyx}, mask_array.shape: {mask_array.shape}"
-            self.space: Space = space
+            expected_shape = (
+                tuple(reversed(space.shape)) if axis_reversed else space.shape
+            )
+            assert mask_array.shape == expected_shape, (
+                f"mask_array.shape {mask_array.shape} does not match expected {expected_shape} "
+                f"derived from space.shape {space.shape} and axis_reversed={axis_reversed}"
+            )
+            self.space = space
         else:
-            # construct a default space assuming isotropic spacing=1mm and
-            # xyz order – the external Space expects (x,y,z) order, hence
-            # reverse the ndarray shape (which is z,y,x)
-            self.space = Space(shape=mask_array.shape[::-1])
+            # Construct a default space, assuming isotropic spacing = 1mm.
+            xyz_shape = mask_array.shape if not axis_reversed else mask_array.shape[::-1]
+            self.space = Space(shape=xyz_shape)
 
         # ---------- semantic mapping -----------------------------------
         if isinstance(mapping, LabelMapping):
@@ -92,25 +99,26 @@ class SegmentationMask:
         bit_depth: int,
         *,
         space: Optional[Space] = None,
-        shape_zyx: Optional[Tuple[int, int, int]] = None,
+        shape: Optional[Tuple[int, ...]] = None,
+        axis_reversed: bool = False,
     ) -> "SegmentationMask":
         """Create an empty mask with given *bit-depth*.
 
-        Either *space* or *shape_zyx* must be supplied to infer the array
+        Either *space* or *shape* must be supplied to infer the array
         dimensions.
         """
-        if space is None and shape_zyx is None:
-            raise ValueError("Either space or shape_zyx must be provided.")
+        if space is None and shape is None:
+            raise ValueError("Either space or shape must be provided.")
 
         if space is not None:
-            shape_zyx = space.shape[::-1]  # xyz → zyx
+            shape = tuple(reversed(space.shape)) if axis_reversed else space.shape
 
         dtype_lookup = {1: np.bool_, 8: np.uint8, 16: np.uint16, 32: np.uint32}
         if bit_depth not in dtype_lookup:
             raise ValueError("bit_depth must be one of 1/8/16/32")
 
-        mask_array = np.zeros(shape_zyx, dtype=dtype_lookup[bit_depth])
-        return cls(mask_array, mapping={}, space=space)
+        mask_array = np.zeros(shape, dtype=dtype_lookup[bit_depth])
+        return cls(mask_array, mapping={}, space=space, axis_reversed=axis_reversed)
 
     # ------------------------------------------------------------------
     # Editing -----------------------------------------------------------
@@ -151,15 +159,29 @@ class SegmentationMask:
     # ------------------------------------------------------------------
     @property
     def data(self) -> np.ndarray:
-        """Raw ndarray with integer labels (read-only view)."""
+        """Raw ndarray in its native axis order (read-only view)."""
         arr = self._mask_array.view()
-        arr.flags.writeable = False  # ensure read-only
+        arr.flags.writeable = False
         return arr
+
+    # Alias for backward compatibility – native order
+    data_native = data
+
+    @property
+    def data_aligned(self) -> np.ndarray:
+        """View of the array whose axes are aligned with ``Space`` order (read‐only)."""
+        if self.axis_reversed:
+            # Reverse axis order, e.g. (z,y,x) -> (x,y,z)
+            view = self._mask_array.transpose(tuple(reversed(range(self._mask_array.ndim))))
+        else:
+            view = self._mask_array
+        view = view.view()
+        view.flags.writeable = False
+        return view
 
     def to_binary(self) -> np.ndarray:
         """Return a boolean array where non-zero voxels are *True*."""
         return self._mask_array.astype(bool)
-
 
     # ------------------------------------------------------------------
     # Internal helpers --------------------------------------------------
@@ -180,7 +202,7 @@ class SegmentationMask:
     # ------------------------------------------------------------------
     def __str__(self) -> str:  # pragma: no cover (human readable)
         return (
-            f"SegmentationMask(shape_zyx={self.space.shape_zyx}, "
+            f"SegmentationMask(shape={self._mask_array.shape}, axis_reversed={self.axis_reversed}, "
             f"labels={sorted(self._existing_labels)}, mapping={self.mapping._name_to_label})"
         )
 
