@@ -8,7 +8,7 @@ authors = [
     {name = "Fastdiag.ai", email = "contact@fastdiag.ai"}
 ]
 keywords = ["medical-imaging", "segmentation", "compression", "mask-processing"]
-license = "MIT"
+license = {text = "MIT"}
 dependencies = [
     "numpy>=1.19.0",
     "zstandard>=0.15.0",
