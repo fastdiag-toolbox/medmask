@@ -1,0 +1,56 @@
+[project]
+name = "medmask"
+dynamic = ["version"]
+description = "Medical Image Mask Compression and Processing Library"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Fastdiag.ai", email = "contact@fastdiag.ai"}
+]
+keywords = ["medical-imaging", "segmentation", "compression", "mask-processing"]
+license = "MIT"
+dependencies = [
+    "numpy>=1.19.0",
+    "zstandard>=0.15.0",
+    "spacetransformer-core==0.1.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=6.0",
+]
+dev = [
+    "pytest>=6.0",
+]
+examples = [
+    "nibabel>=3.0",
+    "jupyter>=1.0",
+    "matplotlib>=3.0",
+]
+
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "medmask/_version.py"
+fallback_version = "0.1.0"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["medmask*"]
