@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# MedMask Compression & Storage Modules
+
+**medmask/compression** – Codec registry and built-in implementations
+- [`__init__.py`](mdc:medmask/compression/__init__.py): Exposes `register_codec` & `get_codec` APIs and auto-registers built-in codecs
+- [`zstd_codec.py`](mdc:medmask/compression/zstd_codec.py): `ZstdCodec` – lossless Zstandard compression (default level 3) with `compress` / `decompress` methods
+
+**Typical usage**
+```python
+from medmask.compression import get_codec
+codec = get_codec('zstd')
+compressed = codec.compress(data)
+raw = codec.decompress(compressed)
+```
+
+---
+
+**medmask/storage** – Mask file I/O (single *.msk* vs. multi-mask *.mska*)
+- [`maskfile.py`](mdc:medmask/storage/maskfile.py): `MaskFile` for single-mask files or convenience helpers `save_mask` / `load_mask`
+- [`archivefile.py`](mdc:medmask/storage/archivefile.py): `MaskArchive` for multi-mask archives; supports lazy loading & organ grouping
+
+**Quick example**
+```python
+from medmask import MaskFile, MaskArchive, SegmentationMask, Space
+
+# Save a single mask
+mask_file = MaskFile('liver.msk', mode='w', space=space)
+mask_file.save_segmask(mask)
+
+# Load it back
+mask = MaskFile('liver.msk').load_segmask()
+
+# Create a multi-mask archive
+archive = MaskArchive('organs.mska', mode='w', space=space)
+archive.add_segmask(mask, 'liver')
+archive.close()
+```
+
+---
+
+## Key concepts
+- **Codec Registry**: Register / retrieve codecs by string identifier
+- **Lazy Loading**: `MaskArchive` reads masks on-demand to keep memory usage low
+- **Compatibility**: Both *.msk* and *.mska* store spatial metadata (`Space`) and label-name mappings for cross-device portability
+
+> These rules help the AI quickly find core files and interfaces related to compression and storage.

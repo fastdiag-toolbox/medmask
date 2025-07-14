@@ -3,34 +3,54 @@ description:
 globs: 
 alwaysApply: false
 ---
-# MedMask 项目结构总览
+# MedMask Project Structure
 
-本项目是一个医疗影像分割 mask 处理库，核心代码位于 [`medmask/`](mdc:medmask)。主要模块：
+A medical image segmentation mask processing library with core functionality in `medmask/`.
 
-1. `medmask.core` – 核心数据结构与算法
-   • [`mask.py`](mdc:medmask/core/mask.py)：定义 `SegmentationMask`，提供 mask 的存储、查询及延迟创建接口。
-   • [`mapping.py`](mdc:medmask/core/mapping.py)：实现 `LabelMapping`，提供 label 与语义名称的双向映射。
+## Current Code Structure
 
-2. `medmask.archive` – 多 mask 容器格式
-   • [`archive_file.py`](mdc:medmask/archive/archive_file.py)：实现二进制 *.mska* 文件读写的 `MaskArchive` 类，支持随机访问与可插拔压缩。
+**medmask/core** - Core data structures and algorithms
+- `segmask.py`: `SegmentationMask` class for mask storage, queries, and lazy initialization
+- `mapping.py`: `LabelMapping` for bidirectional label-to-name mapping
 
-3. `medmask.compression` – 压缩编解码器注册表 
-   • [`__init__.py`](mdc:medmask/compression/__init__.py)：注册编解码器并暴露 `get_codec`。
-   • [`zstd_codec.py`](mdc:medmask/compression/zstd_codec.py)：默认 Zstandard 压缩实现 `ZstdMaskCodec`。
+**medmask/storage** - File persistence for segmentation masks
+- `archivefile.py`: `MaskArchive` for multi-mask binary *.mska* archive files
+- `maskfile.py`: `MaskFile` for single-mask *.msk* files with convenience functions
+- Provides `save_mask`, `load_mask` helper functions
 
-4. `medmask.utils` – 工具集合
-   • [`utils.py`](mdc:medmask/io/utils.py)：提供 `match_allowed_values`，通过区间比较高效筛选像素值。
+**medmask/compression** - Compression codec registry
+- `__init__.py`: Codec registration and `get_codec` interface
+- `zstd_codec.py`: Zstandard compression implementation
 
-常用入口:
-• 导入 `SegmentationMask` 与 `LabelMapping`: 
+**medmask/utils** - Utility functions
+- `utils.py`: Helper functions including `match_allowed_values` for efficient pixel filtering
+
+## Main Classes and Functions
+
 ```python
-from medmask.core import SegmentationMask, LabelMapping
-```
-• 读写多 mask 容器:
-```python
-from medmask.archive import MaskArchive
-archive = MaskArchive('case001.mska', mode='w', space=space)
-archive.add_segmask(seg_mask, name='artery')
+# Core classes
+from medmask import SegmentationMask, LabelMapping
+
+# Storage - Archive operations (multiple masks)
+from medmask import MaskArchive
+archive = MaskArchive('organs.mska', mode='w', space=space)
+archive.add_segmask(mask, 'liver')
+
+# Storage - Single mask file operations
+from medmask import MaskFile, save_mask, load_mask
+save_mask(mask, 'liver.msk')
+mask = load_mask('liver.msk')
+
+# Or using MaskFile directly
+mask_file = MaskFile('liver.msk', mode='w', space=space)
+mask_file.save_segmask(mask)
 ```
 
-> **提示** 在阅读源码时，可优先查看上面列出的文件以快速定位核心逻辑。
+## Key Features
+
+- **Compression**: 50+ compression ratio using Zstandard
+- **Performance**: 16x faster read operations  
+- **File Types**: Single masks (*.msk*) and multi-mask archives (*.mska*)
+- **Semantic mapping**: Built-in name-to-label conversion
+- **Overlapping masks**: Multi-granularity organ combinations
+- **Lazy loading**: Memory-efficient on-demand construction

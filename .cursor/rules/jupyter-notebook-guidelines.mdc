@@ -1,5 +1,36 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Jupyter Notebook Guidelines
+
+When working with Jupyter notebook files (.ipynb), follow these guidelines:
+
+## Language Requirements
+- **Always write in English** - All code comments, markdown cells, and documentation should be in English
+- Use clear, professional English for all explanations and descriptions
+
+## Writing Style
+- **Keep content concise** - Be brief and to the point
+- Use clear, simple language that's easy to understand
+- Focus on essential information only
+- Avoid unnecessary verbose explanations
+
+## Best Practices
+- Write clean, readable code with minimal but effective comments
+- Use markdown cells for brief explanations when needed
+- Keep variable names descriptive but not overly long
+- Structure notebooks logically with clear section headers
+
+## Example Format
+```python
+# Load data and preprocess
+data = load_dataset()
+processed_data = preprocess(data)
+
+# Train model
+model = train_model(processed_data)
+```
+
+> **Note**: These guidelines ensure notebooks are professional, accessible, and maintainable.
