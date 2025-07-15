@@ -39,15 +39,15 @@ def test_space():
 @pytest.fixture 
 def dummy_mask(test_space):
     """创建一个简单的dummy掩膜用于重复测试"""
-    # 创建简单的掩膜数据
-    mask_array = np.zeros((20, 15, 10), dtype=np.uint8)
-    mask_array[5:15, 3:12, 2:8] = 1  # 创建一个简单的3D矩形区域
+    # 创建简单的掩膜数据 - 注意现在使用 (z,y,x) 格式
+    mask_array = np.zeros((10, 15, 20), dtype=np.uint8)  # (z,y,x) 格式
+    mask_array[2:8, 3:12, 5:15] = 1  # 创建一个简单的3D矩形区域
     
     # 创建语义映射
     mapping = LabelMapping({"test_organ": 1})
     
     # 创建掩膜对象
-    mask = SegmentationMask(mask_array, mapping, test_space, axis_reversed=True)
+    mask = SegmentationMask(mask_array, mapping, test_space)
     return mask
 
 
@@ -57,7 +57,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
     num_masks = 100  # 足够触发多次索引扩容
     
     # 步骤1: 创建归档并添加大量掩膜
-    archive_write = MaskArchive(temp_archive_path, mode="w", space=test_space, axis_reversed=True)
+    archive_write = MaskArchive(temp_archive_path, mode="w", space=test_space)
     
     mask_names = []
     original_data = dummy_mask.data.copy()
@@ -105,7 +105,7 @@ def test_large_number_of_masks_offset_bug(temp_archive_path, test_space, dummy_m
 def test_index_expansion_triggers_offset_update(temp_archive_path, test_space, dummy_mask):
     """专门测试索引扩容时偏移量更新的正确性"""
     
-    archive_write = MaskArchive(temp_archive_path, mode="w", space=test_space, axis_reversed=True)
+    archive_write = MaskArchive(temp_archive_path, mode="w", space=test_space)
     
     # 添加足够多的掩膜来触发索引扩容
     # MaskArchive的初始索引容量是4000 bytes，每个条目大约80-100 bytes
@@ -168,7 +168,7 @@ def test_index_expansion_triggers_offset_update(temp_archive_path, test_space, d
 def test_simple_offset_bug_reproduction(temp_archive_path, test_space, dummy_mask):
     """最简单的偏移量bug复现测试"""
     
-    archive = MaskArchive(temp_archive_path, mode="w", space=test_space, axis_reversed=True)
+    archive = MaskArchive(temp_archive_path, mode="w", space=test_space)
     
     # 添加大量掩膜，确保触发索引扩容
     for i in range(120):  # 超过初始索引容量

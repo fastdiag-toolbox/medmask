@@ -33,12 +33,11 @@ class MaskArchive:
             magic       "MSKA" (4)
             version     0x0100 (2 bytes)  • major/minor
             codec_id    (B)
-            axis_flag   (B)
             space_offset, space_length   (Q, Q)
             index_offset, index_length   (Q, Q)
             data_offset,  data_length    (Q, Q)
             mask_count                   (Q)
-            reserved (23 B)
+            reserved (27 B)
 
     Fixed-size 100-byte header simplifies random access and future extension.
     """
@@ -46,18 +45,17 @@ class MaskArchive:
     MAGIC_NUMBER = b"MSKA"
     VERSION = (1, 0)  # major, minor
 
-    HEADER_STRUCT = "<4s2B B B 7Q24x"  # =100 B: magic + ver(2) + codec + axis + 7Q + pad
+    HEADER_STRUCT = "<4s2B B 7Q27x"  # =100 B: magic + ver(2) + codec + 7Q + pad
 
     MAX_INDEX_LENGTH = 4000  # bytes reserved for JSON index initially
 
     # ------------------------------------------------------------------
-    def __init__(self, path: str, mode: str = "r", *, space: Optional[Space] = None, codec: str | None = None, axis_reversed: bool = False):
+    def __init__(self, path: str, mode: str = "r", *, space: Optional[Space] = None, codec: str | None = None):
         self.path = path
         self.mode = mode
         self.space = space
         self.codec = get_codec(codec)  # defaults to zstd
         self._header_cache: Optional[Dict[str, int]] = None
-        self.axis_reversed = axis_reversed
 
         if os.path.exists(path) and mode in {"r", "a"}:
             hdr = self._read_header()
@@ -65,8 +63,9 @@ class MaskArchive:
                 with open(path, "rb") as f:
                     f.seek(hdr["space_offset"])
                     space_json = f.read(hdr["space_length"]).decode("utf-8")
-                    self.space = Space.from_json(space_json)
-                    self.axis_reversed = bool(hdr.get("axis_flag", 0))
+                    # Convert space from file (x,y,z) to internal (z,y,x) format
+                    space_from_file = Space.from_json(space_json)
+                    self.space = space_from_file.reverse_axis_order()
         elif mode == "w":
             if os.path.exists(path):
                 os.remove(path)
@@ -87,7 +86,6 @@ class MaskArchive:
             major,
             minor,
             self.codec.id,
-            kw["axis_flag"],
             kw["space_offset"],
             kw["space_length"],
             kw["index_offset"],
@@ -113,7 +111,6 @@ class MaskArchive:
             ver_major,
             ver_minor,
             codec_id,
-            axis_flag,
             space_offset,
             space_length,
             index_offset,
@@ -138,7 +135,6 @@ class MaskArchive:
             "data_offset": data_offset,
             "data_length": data_length,
             "mask_count": mask_count,
-            "axis_flag": axis_flag,
         }
 
     # ------------------------------------------------------------------
@@ -164,20 +160,13 @@ class MaskArchive:
     # Data preparation --------------------------------------------------
     # ------------------------------------------------------------------
     def _prepare_data(self, segmask: "SegmentationMask") -> bytes:
-        # Align archive-wide space and axis_reversed settings
+        # Align archive-wide space settings
         if self.space is None:
             if segmask.space is None:
                 raise ValueError("space undefined for both archive and segmask")
             self.space = segmask.space
         else:
             assert segmask.space == self.space, "space mismatch between segmask and archive"
-
-        # Axis order must match across masks in an archive
-        if not hasattr(self, "axis_reversed") or self.axis_reversed is None:
-            self.axis_reversed = segmask.axis_reversed
-        else:
-            if segmask.axis_reversed != self.axis_reversed:
-                raise ValueError("axis_reversed mismatch between segmask and archive")
 
         return self.codec.encode(segmask.data)
 
@@ -225,7 +214,6 @@ class MaskArchive:
                 "data_offset": data_offset,
                 "data_length": 0,
                 "mask_count": 0,
-                "axis_flag": int(self.axis_reversed),
             }
         else:
             hdr = self.header.copy()
@@ -235,7 +223,9 @@ class MaskArchive:
             # write space JSON if first segmask
             if hdr["mask_count"] == 0:
                 fp.seek(hdr["space_offset"])
-                fp.write(self.space.to_json().encode("utf-8"))
+                # Convert space from internal (z,y,x) to file (x,y,z) format
+                space_for_file = self.space.reverse_axis_order()
+                fp.write(space_for_file.to_json().encode("utf-8"))
 
             # ensure index capacity first (with existing entries only)
             json_bytes = json.dumps(idx_list).encode("utf-8")
@@ -277,7 +267,6 @@ class MaskArchive:
             # update header bookkeeping
             hdr["data_length"] += length
             hdr["mask_count"] += 1
-            hdr["axis_flag"] = int(self.axis_reversed)
             self._write_header(fp, **hdr)
             self._header_cache = hdr  # refresh
 
@@ -297,7 +286,7 @@ class MaskArchive:
 
         arr = self.codec.decode(blob)
         mapping = LabelMapping(entry["mapping"])
-        return SegmentationMask(arr, mapping, space=self.space, axis_reversed=self.axis_reversed)
+        return SegmentationMask(arr, mapping, space=self.space)
 
     # helpers -----------------------------------------------------------
     def all_names(self) -> List[str]:

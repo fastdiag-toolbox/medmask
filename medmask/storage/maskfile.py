@@ -4,6 +4,13 @@ from __future__ import annotations
 
 `MaskFile` stores exactly one :class:`medmask.core.segmask.SegmentationMask` on disk.
 Persistence helpers `save_mask()` / `load_mask()` offer functional usage.
+
+File format design for cross-language compatibility:
+- Mask data: stored as-is in (z,y,x) format 
+- Space description: stored in (x,y,z) format for C++ compatibility
+- Python users: see data(z,y,x) + C order + space(z,y,x) → aligned
+- C++ users: see data(x,y,z) + fortran order + space(x,y,z) → aligned in their axis convention
+- No axis_reversed complications for users, conversion handled transparently
 """
 
 from typing import Any, Dict, Optional, TYPE_CHECKING
@@ -29,11 +36,11 @@ __all__ = [
 class MaskFile:
     """Light-weight file format for a single segmentation mask (.msk)."""
 
-    MAGIC_NUMBER = b"MSK1"
+    MAGIC_NUMBER = b"MSK1" 
     VERSION = (1, 0)  # major, minor
 
-    # <4s 2B B B 6Q 7x> = 64 B total
-    HEADER_STRUCT = "<4s2B B B 6Q 7x"
+    # <4s 2B B 6Q 7x> = 64 B total 
+    HEADER_STRUCT = "<4s2B B 6Q 7x"
 
     def __init__(self, path: str, mode: str = "r", *, codec: str | None = None):
         self.path = path
@@ -62,7 +69,6 @@ class MaskFile:
             major,
             minor,
             self.codec.id,
-            kw["axis_flag"],
             kw["space_offset"],
             kw["space_length"],
             kw["mapping_offset"],
@@ -78,12 +84,12 @@ class MaskFile:
     def _read_header(self) -> Dict[str, int]:
         with open(self.path, "rb") as fp:
             raw = fp.read(struct.calcsize(self.HEADER_STRUCT))
+            
         (
             magic,
             ver_major,
             ver_minor,
             codec_id,
-            axis_flag,
             space_offset,
             space_length,
             mapping_offset,
@@ -91,15 +97,16 @@ class MaskFile:
             data_offset,
             data_length,
         ) = struct.unpack(self.HEADER_STRUCT, raw)
-
+        
         if magic != self.MAGIC_NUMBER:
-            raise ValueError("invalid magic")
+            raise ValueError(f"Invalid magic number: {magic}. Expected {self.MAGIC_NUMBER}")
         if (ver_major, ver_minor) != self.VERSION:
-            raise ValueError(f"unsupported version {(ver_major, ver_minor)}")
+            raise ValueError(f"Unsupported version {(ver_major, ver_minor)}. Expected {self.VERSION}")
         if codec_id != self.codec.id:
             raise ValueError(
-                f"codec mismatch: file uses id {codec_id}, but current codec id is {self.codec.id}"
+                f"Codec mismatch: file uses id {codec_id}, but current codec id is {self.codec.id}"
             )
+        
         return {
             "space_offset": space_offset,
             "space_length": space_length,
@@ -107,18 +114,25 @@ class MaskFile:
             "mapping_length": mapping_length,
             "data_offset": data_offset,
             "data_length": data_length,
-            "axis_flag": axis_flag,
         }
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
     def write(self, segmask: "SegmentationMask") -> None:
+        """Write segmentation mask to file.
+        
+        Stores mask data as-is, but converts space description to (x,y,z) order
+        for C++ compatibility.
+        """
         if self.mode == "r":
             raise IOError("file opened read-only")
 
-        # serialise auxiliary data
-        space_b = segmask.space.to_json().encode("utf-8")
+        # Convert space from internal (z,y,x) to file (x,y,z) format
+        space_for_file = segmask.space.reverse_axis_order()
+        space_b = space_for_file.to_json().encode("utf-8")
+        
+        # Keep mapping and data as-is
         mapping_b = json.dumps(segmask.mapping._name_to_label).encode("utf-8")
         data_b = self.codec.encode(segmask.data)
 
@@ -134,7 +148,6 @@ class MaskFile:
             # header first
             self._write_header(
                 fp,
-                axis_flag=int(segmask.axis_reversed),
                 space_offset=space_offset,
                 space_length=space_length,
                 mapping_offset=mapping_offset,
@@ -157,18 +170,24 @@ class MaskFile:
             "mapping_length": mapping_length,
             "data_offset": data_offset,
             "data_length": data_length,
-            "axis_flag": int(segmask.axis_reversed),
         }
 
     # ------------------------------------------------------------------
     def read(self) -> "SegmentationMask":
+        """Read segmentation mask from file.
+        
+        Reads mask data as-is, but converts space description from (x,y,z) back 
+        to internal (z,y,x) format.
+        """
         from medmask.core.segmask import SegmentationMask  # inline import to avoid cycle
 
         hdr = self.header
         with open(self.path, "rb") as fp:
             fp.seek(hdr["space_offset"])
             space_json = fp.read(hdr["space_length"]).decode("utf-8")
-            space = Space.from_json(space_json)
+            # Convert space from file (x,y,z) to internal (z,y,x) format
+            space_from_file = Space.from_json(space_json)
+            space = space_from_file.reverse_axis_order()
 
             fp.seek(hdr["mapping_offset"])
             mapping_json = fp.read(hdr["mapping_length"]).decode("utf-8")
@@ -178,8 +197,7 @@ class MaskFile:
             data_b = fp.read(hdr["data_length"])
             arr = self.codec.decode(data_b)
 
-        axis_reversed = bool(hdr.get("axis_flag", 0))
-        return SegmentationMask(arr, mapping, space=space, axis_reversed=axis_reversed)
+        return SegmentationMask(arr, mapping, space=space)
 
     # ------------------------------------------------------------------
     @property

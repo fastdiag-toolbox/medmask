@@ -25,10 +25,10 @@ def space():
 
 @pytest.fixture
 def sample_mask(space):
-    arr = np.zeros((24, 16, 8), dtype=np.uint8)
-    arr[5:15, 4:12, 2:6] = 1
+    arr = np.zeros((8, 16, 24), dtype=np.uint8)  # (z,y,x) 格式
+    arr[2:6, 4:12, 5:15] = 1
     mapping = LabelMapping({"lesion": 1})
-    return SegmentationMask(arr, mapping, space, axis_reversed=True)
+    return SegmentationMask(arr, mapping, space)
 
 
 # -----------------------------------------------------------------------------
