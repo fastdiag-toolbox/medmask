@@ -31,37 +31,23 @@ import numpy as np
 from medmask import SegmentationMask, MaskArchive, save_mask, load_mask
 from spacetransformer import Space
 
-# Create spatial information (XYZ order)
-space = Space(shape=(192, 192, 64), spacing=(1.0, 1.0, 2.5))
-
-# -----------------------------
-# Axis order ⚠️
-# -----------------------------
-# In MedMask the ndarray can be stored either in the same axis order as
-# ``Space`` (XYZ) *or* in the completely reversed order (ZYX).  This is
-# controlled by the ``axis_reversed`` flag:
-#   axis_reversed = False → ndarray axes = (X,Y,Z, …)
-#   axis_reversed = True  → ndarray axes = (Z,Y,X, …)
-# Most medical images are read as (Z,Y,X), therefore **setting
-# ``axis_reversed=True`` keeps the natural order** while still knowing
-# how to align with geometry when needed.
+# Create spatial information 
+space = Space(shape=(64, 192, 192), spacing=(2.5, 1.0, 1.0))
 
 # -----------------------------
 # Create mask – two approaches
 # -----------------------------
-# 1. Complete initialization (natural ZYX order)
+# 1. Complete initialization
 liver_data = np.zeros((64, 192, 192), dtype=np.uint8)  # (Z,Y,X)
 liver_data[20:40, 50:150, 60:140] = 1
-mask = SegmentationMask(liver_data, {"liver": 1}, space=space, axis_reversed=True)
+mask = SegmentationMask(liver_data, {"liver": 1}, space=space)
 
 # 2. Lazy loading (multiple organs)
-combined_mask = SegmentationMask.lazy_init(bit_depth=8, space=space, axis_reversed=True)
+combined_mask = SegmentationMask.lazy_init(bit_depth=8, space=space)
 combined_mask.add_label(liver_data > 0, label=1, name="liver")
 combined_mask.add_label(spleen_data > 0, label=2, name="spleen")
 
 # Query masks
-# native order → mask.data
-# aligned with geometry → mask.data_aligned
 liver_region = mask.get_binary_mask_by_names("liver")
 multiple_organs = combined_mask.get_binary_mask_by_names(["liver", "spleen"])
 ```
@@ -78,7 +64,7 @@ mask.save('liver.msk')
 loaded_mask = SegmentationMask.load('liver.msk')
 
 # Multi-mask archives (.mska) - for collections
-archive = MaskArchive("organs.mska", mode="w", space=space, axis_reversed=True)
+archive = MaskArchive("organs.mska", mode="w", space=space)
 archive.add_segmask(liver_mask, "liver")
 archive.add_segmask(heart_mask, "heart")
 
