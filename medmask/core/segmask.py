@@ -160,7 +160,21 @@ class SegmentationMask:
     # ------------------------------------------------------------------
     @property
     def data(self) -> np.ndarray:
-        """数据数组，始终为(z,y,x)格式的只读视图。"""
+        """Return mask data array as read-only view in (z,y,x) format.
+        
+        The mask array is always stored internally in (z,y,x) format for consistency
+        with medical imaging conventions. This property provides a read-only view
+        to prevent accidental modifications to the underlying data.
+        
+        Returns:
+            np.ndarray: Read-only view of the mask array in (z,y,x) format
+            
+        Example:
+            >>> mask = SegmentationMask(data, mapping, space)
+            >>> mask_data = mask.data
+            >>> print(mask_data.shape)  # (depth, height, width)
+            (64, 192, 192)
+        """
         arr = self._mask_array.view()
         arr.flags.writeable = False
         return arr

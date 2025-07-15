@@ -14,42 +14,42 @@ from spacetransformer import Space
 
 
 def test_unified_axis_behavior():
-    """测试统一的 (z,y,x) 轴序行为。"""
-    # Space 以 (z,y,x) 顺序给 shape
+    """Test unified (z,y,x) axis order behavior."""
+    # Space takes shape in (z,y,x) order
     zyx_shape = (8, 16, 24)
     space = Space(shape=zyx_shape)
 
-    # 创建 (z,y,x) 格式的数组
+    # Create array in (z,y,x) format
     arr = np.arange(np.prod(zyx_shape), dtype=np.uint8).reshape(zyx_shape)
 
     mask = SegmentationMask(arr, mapping=LabelMapping({"bg": 0}), space=space)
 
-    # 1. data 始终返回 (z,y,x) 格式
+    # 1. data always returns (z,y,x) format
     assert mask.data.shape == zyx_shape
     np.testing.assert_array_equal(mask.data, arr)
 
-    # 2. data 是只读的
+    # 2. data is read-only
     with pytest.raises(ValueError):
         mask.data[0, 0, 0] = 99
 
-    # 3. space 的形状应该与数组形状一致
+    # 3. space shape should match array shape
     assert mask.space.shape == zyx_shape
 
 
 def test_space_array_shape_consistency():
-    """测试 space 和 array 的形状一致性检查。"""
-    # 正确的情况
+    """Test space and array shape consistency check."""
+    # Correct case
     shape = (4, 8, 12)
     space = Space(shape=shape)
     arr = np.zeros(shape, dtype=np.uint8)
     
-    # 应该成功创建
+    # Should create successfully
     mask = SegmentationMask(arr, mapping={}, space=space)
     assert mask.data.shape == shape
     assert mask.space.shape == shape
     
-    # 错误的情况：形状不匹配
-    wrong_shape = (4, 8, 10)  # 最后一维不匹配
+    # Error case: shape mismatch
+    wrong_shape = (4, 8, 10)  # Last dimension doesn't match
     wrong_space = Space(shape=wrong_shape)
     
     with pytest.raises(AssertionError):
@@ -57,23 +57,23 @@ def test_space_array_shape_consistency():
 
 
 def test_lazy_init_unified_behavior():
-    """测试lazy_init的统一行为。"""
+    """Test unified behavior of lazy_init."""
     shape = (6, 10, 14)
     space = Space(shape=shape)
     
-    # 使用space创建
+    # Create using space
     mask1 = SegmentationMask.lazy_init(8, space=space)
     assert mask1.data.shape == shape
     assert mask1.space.shape == shape
     
-    # 使用shape创建
+    # Create using shape
     mask2 = SegmentationMask.lazy_init(16, shape=shape)
     assert mask2.data.shape == shape
     assert mask2.space.shape == shape
 
 
 def test_maskfile_unified_io():
-    """测试文件I/O的统一行为。"""
+    """Test unified file I/O behavior."""
     zyx_shape = (6, 10, 14)
     space = Space(shape=zyx_shape)
 
@@ -87,20 +87,20 @@ def test_maskfile_unified_io():
 
         loaded = MaskFile(path).read()
         
-        # 验证数据完全一致
+        # Verify data consistency
         np.testing.assert_array_equal(loaded.data, mask.data)
         assert loaded.data.shape == zyx_shape
         assert loaded.space.shape == zyx_shape
         
-        # 验证空间信息一致
+        # Verify space information consistency
         assert loaded.space.shape == mask.space.shape
         assert np.allclose(loaded.space.spacing, mask.space.spacing)
         assert np.allclose(loaded.space.origin, mask.space.origin)
 
 
 def test_cross_language_compatibility():
-    """测试跨语言兼容性设计。"""
-    # 创建测试数据
+    """Test cross-language compatibility design."""
+    # Create test data
     zyx_shape = (4, 6, 8)
     space = Space(shape=zyx_shape, spacing=(1.0, 2.0, 3.0), origin=(10, 20, 30))
     arr = np.random.randint(0, 4, size=zyx_shape, dtype=np.uint8)
@@ -109,17 +109,17 @@ def test_cross_language_compatibility():
     with tempfile.TemporaryDirectory() as tmpdir:
         path = os.path.join(tmpdir, "cross_lang.msk")
         
-        # 保存
+        # Save
         mask.save(path)
         
-        # 加载
+        # Load
         loaded = SegmentationMask.load(path)
         
-        # Python用户视角：data(z,y,x) + space(z,y,x) → aligned
+        # Python user perspective: data(z,y,x) + space(z,y,x) → aligned
         assert loaded.data.shape == zyx_shape
         assert loaded.space.shape == zyx_shape
         np.testing.assert_array_equal(loaded.data, arr)
         
-        # 验证空间信息正确转换
+        # Verify correct space information conversion
         assert loaded.space.spacing == space.spacing
         assert loaded.space.origin == space.origin

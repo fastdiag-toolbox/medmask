@@ -1,0 +1,173 @@
+---
+description: Docstring standards for MedMask project - ensures consistent English-only Google-style docstrings
+globs: ["*.py"]
+alwaysApply: true
+---
+
+# Docstring Standards for MedMask Project
+
+This rule ensures consistent, professional, and maintainable docstring formatting across the entire MedMask codebase.
+
+## Core Requirements
+
+### 1. Language Requirement
+- **All docstrings MUST be written in English**
+- No Chinese characters or mixed language usage
+- Use clear, professional English that's accessible to international developers
+
+### 2. Format Standard
+- **Google-style docstrings** are mandatory
+- Follow the exact format specified in the main code-quality.mdc file
+- Include proper sections: Args, Returns, Raises, Example when applicable
+
+### 3. Medical Domain Specificity
+- Document coordinate systems explicitly (e.g., "in (z,y,x) format")
+- Specify units for physical measurements (typically mm)
+- Reference medical imaging standards when relevant (DICOM, NIfTI, etc.)
+
+## Docstring Structure Examples
+
+### Function/Method Level
+```python
+def get_binary_mask_by_names(self, names: Union[str, List[str]]) -> np.ndarray:
+    """Retrieve binary mask array by semantic name(s).
+    
+    This method extracts binary masks for specified anatomical regions
+    and returns them as a single boolean array in (z,y,x) format.
+    
+    Args:
+        names: Single name or list of semantic names to retrieve
+        
+    Returns:
+        np.ndarray: Binary mask array in (z,y,x) format where True
+                   indicates presence of any specified region
+        
+    Raises:
+        KeyError: If any name not found in mapping
+        
+    Example:
+        >>> mask = segmask.get_binary_mask_by_names("liver")
+        >>> multi_mask = segmask.get_binary_mask_by_names(["liver", "spleen"])
+        >>> print(multi_mask.shape)
+        (64, 192, 192)
+    """
+```
+
+### Property Documentation
+```python
+@property
+def data(self) -> np.ndarray:
+    """Return mask data array as read-only view in (z,y,x) format.
+    
+    The mask array is stored internally in (z,y,x) format for consistency
+    with medical imaging conventions. This property provides a read-only view
+    to prevent accidental modifications.
+    
+    Returns:
+        np.ndarray: Read-only view of mask array in (z,y,x) format
+        
+    Example:
+        >>> mask = SegmentationMask(data, mapping, space)
+        >>> mask_data = mask.data
+        >>> mask_data.flags.writeable
+        False
+    """
+```
+
+## Test Docstring Standards
+
+### Test Class
+```python
+class TestSegmentationMask:
+    """Test functionality of SegmentationMask class."""
+```
+
+### Test Fixture
+```python
+@pytest.fixture
+def sample_mask():
+    """Create sample segmentation mask for testing."""
+```
+
+### Test Method
+```python
+def test_data_property():
+    """Test that data property returns correct array format."""
+```
+
+## Medical Imaging Specific Guidelines
+
+### 1. Coordinate System Documentation
+- Always specify array format: "(z,y,x) format", "(depth, height, width)"
+- Clarify physical vs. index coordinates: "in voxel coordinates", "in mm"
+- Document axis order explicitly for medical imaging context
+
+### 2. Unit Documentation
+- Physical measurements: "spacing in mm", "origin in mm"
+- Array dimensions: "shape in voxels"
+- File sizes: "approximately X MB"
+
+### 3. File Format References
+- Reference standards: "Compatible with DICOM", "NIfTI format"
+- File extensions: "saves as .msk format", "loads .nii.gz files"
+- Compression: "uses Zstandard compression"
+
+## Quality Checklist
+
+Before committing any Python file, ensure:
+
+- [ ] All docstrings are in English
+- [ ] No Chinese characters in docstrings
+- [ ] Google-style format is followed
+- [ ] Medical imaging context is documented
+- [ ] Coordinate systems are specified
+- [ ] Units are clearly stated
+- [ ] Examples are provided for public APIs
+- [ ] Error conditions are documented
+
+## Examples of Common Violations
+
+### ❌ Bad Examples
+```python
+def get_mask():
+    """获取掩膜数据"""  # Chinese text - FORBIDDEN
+    
+def process_data():
+    """Process data"""  # Too brief, no context
+    
+def save_file():
+    """Save mask to file
+    
+    path: file path
+    """  # Wrong format, missing types and structure
+```
+
+### ✅ Good Examples
+```python
+def get_mask_by_name(self, name: str) -> np.ndarray:
+    """Retrieve binary mask array by semantic name.
+    
+    Args:
+        name: Semantic name of the mask region
+        
+    Returns:
+        np.ndarray: Binary mask array in (z,y,x) format
+        
+    Raises:
+        KeyError: If name not found in mapping
+        
+    Example:
+        >>> mask = get_mask_by_name("liver")
+        >>> print(mask.shape)
+        (64, 192, 192)
+    """
+```
+
+## Integration with Development Workflow
+
+1. **Pre-commit checks**: Verify docstring language and format
+2. **Code review**: Ensure medical context is properly documented
+3. **Documentation generation**: Docstrings should be suitable for Sphinx/autodoc
+4. **Testing**: Include docstring examples in automated testing when possible
+
+This rule ensures the MedMask codebase maintains professional, consistent, and internationally accessible documentation standards while preserving the medical imaging domain expertise.
