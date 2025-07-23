@@ -12,7 +12,7 @@ license = {text = "MIT"}
 dependencies = [
     "numpy>=1.19.0",
     "zstandard>=0.15.0",
-    "spacetransformer-core==0.1.0",
+    "spacetransformer-core>=0.1.0",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
