@@ -56,8 +56,8 @@ multiple_organs = combined_mask.get_binary_mask_by_names(["liver", "spleen"])
 
 ```python
 # Single mask files (.msk)
-save_mask(mask, "liver.msk")
-loaded_mask = load_mask("liver.msk")
+medmask.save_mask(mask, "liver.msk")
+loaded_mask = medmask.load_mask("liver.msk")
 
 # Equivalent
 mask.save('liver.msk')
